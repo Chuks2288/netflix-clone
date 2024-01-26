@@ -1,10 +1,18 @@
 "use client";
 
 import Input from "@/components/Input"
+import axios from "axios";
+import { Loader2 } from "lucide-react";
 import Image from "next/image"
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
+
+import { signIn } from "next-auth/react";
 
 const page = () => {
+
+    const router = useRouter();
 
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
@@ -12,9 +20,56 @@ const page = () => {
 
     const [variant, setVariant] = useState("login");
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const toggleVariant = useCallback(() => {
         setVariant((currentVariant) => currentVariant === "login" ? "register" : "login");
     }, []);
+
+    const login = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            await signIn("credentials", {
+                email,
+                password,
+                redirect: false,
+                callbackUrl: "/",
+            })
+
+            toast.success("Login successful");
+            router.push("/");
+        } catch (error) {
+            console.log(error);
+            toast.error("Error logging in");
+            setPassword("");
+        } finally {
+            setIsLoading(false);
+        }
+
+    }, [email, password, router]);
+
+    const register = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            await axios.post('/api/register', {
+                email,
+                name,
+                password
+            });
+            toast.success("Registration Successful");
+
+            login();
+            setPassword("");
+        } catch (error) {
+            console.log(error);
+            toast.error("Registration Error");
+            setPassword("");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [email, name, password, login]);
+
+
 
     return (
         <div className="relative h-full w-full bg-[url('/images/hero.jpg')] bg-no-repeat bg-center bg-fixed bg-cover">
@@ -40,7 +95,7 @@ const page = () => {
                                     label="Username"
                                     onChange={(e: any) => setName(e.target.value)}
                                     id="name"
-                                    value={email}
+                                    value={name}
                                 />
                             )}
                             <Input
@@ -58,8 +113,18 @@ const page = () => {
                                 value={password}
                             />
                         </div>
-                        <button className="bg-red-600 py-3 text-white rounded-md w-full mt-10 hover:bg-red-700 transition">
-                            {variant === "login" ? "Login" : "Sign up"}
+                        <button
+                            onClick={variant === "login" ? login : register}
+                            className="bg-red-600 py-3 text-white rounded-md w-full 
+                                mt-10 hover:bg-red-700 transition flex justify-center items-center"
+                        >
+                            {variant === "login" ? (
+
+                                isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : "Login"
+                            )
+                                :
+                                isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : "Sign up"
+                            }
                         </button>
                         <p className="text-neutral-500 mt-12">
                             {variant === "login" ? "First time using Netflix?" : "Already have an account?"}
@@ -73,7 +138,7 @@ const page = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
 
