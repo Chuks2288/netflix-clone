@@ -8,7 +8,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { db } from "@/lib/db"
 
 export const authOptions: AuthOptions = {
-    adapter: PrismaAdapter(db),
+    // adapter: PrismaAdapter(db),
     providers: [
         GithubProvider({
             clientId: process.env.GITHUB_ID as string,
@@ -29,7 +29,7 @@ export const authOptions: AuthOptions = {
                     throw new Error('Invalid credentials');
                 }
 
-                const user = await prisma.user.findUnique({
+                const user = await db.user.findUnique({
                     where: {
                         email: credentials.email
                     }
@@ -56,8 +56,12 @@ export const authOptions: AuthOptions = {
         signIn: '/auth',
     },
     debug: process.env.NODE_ENV !== 'production',
+    adapter: PrismaAdapter(db),
     session: {
         strategy: "jwt",
+    },
+    jwt: {
+        secret: process.env.NEXTAUTH_JWT_SECRET,
     },
     secret: process.env.NEXTAUTH_SECRET,
 }
